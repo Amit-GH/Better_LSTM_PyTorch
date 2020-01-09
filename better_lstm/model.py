@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, pad_packed_sequence, pack_padded_sequence
 from typing import *
 
 
@@ -22,11 +22,8 @@ class VariationalDropout(nn.Module):
 
         is_packed = isinstance(x, PackedSequence)
         if is_packed:
-            x, batch_sizes = x
-            max_batch_size = int(batch_sizes[0])
-        else:
-            batch_sizes = None
-            max_batch_size = x.size(0)
+            x, seq_lens = pad_packed_sequence(x, batch_first=self.batch_first)
+        max_batch_size = x.size(0 if self.batch_first else 1)
 
         # Drop same mask across entire sequence
         if self.batch_first:
@@ -36,7 +33,7 @@ class VariationalDropout(nn.Module):
         x = x.masked_fill(m == 0, 0) / (1 - self.dropout)
 
         if is_packed:
-            return PackedSequence(x, batch_sizes)
+            return pack_padded_sequence(x, seq_lens, batch_first=self.batch_first)
         else:
             return x
 
@@ -76,6 +73,7 @@ class LSTM(nn.LSTM):
 
     def forward(self, input, hx=None):
         self._drop_weights()
+        self.flatten_parameters()
         input = self.input_drop(input)
         seq, state = super().forward(input, hx=hx)
         return self.output_drop(seq), state
