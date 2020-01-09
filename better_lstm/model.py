@@ -73,6 +73,7 @@ class LSTM(nn.LSTM):
 
     def forward(self, input, hx=None):
         self._drop_weights()
+        self.flatten_parameters()
         input = self.input_drop(input)
         seq, state = super().forward(input, hx=hx)
         return self.output_drop(seq), state
