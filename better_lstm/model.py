@@ -37,6 +37,7 @@ class VariationalDropout(nn.Module):
         else:
             return x
 
+
 class LSTM(nn.LSTM):
     def __init__(self, *args, dropouti: float=0.,
                  dropoutw: float=0., dropouto: float=0.,
